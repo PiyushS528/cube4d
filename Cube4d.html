@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Cube 4d</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<style type="text/css">
+			body {
+				background: #000000;
+			}
+			canvas {
+				border: 1px solid #ffffff;
+			}
+			#canv {
+				display: block;
+				margin: auto;
+				width: 600px;
+				max-width: 99%;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<div id="main_container">
+				<canvas id="canv" width="1200" height="1200">Canvas is not supported in your browser</canvas>
+			</div>
+		<main>
+
+		<script type='text/javascript'>
+			var animFrame = null;
+			var timer = -1;
+			var c;
+			var m = {sin: Math.sin(0.04), cos: Math.cos(0.04), pspeed: 20};
+			var requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame || window.mozRequestAnimationFrame;
+			var cancelAnimationFrame = window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.msCancelRequestAnimationFrame || window.mozCancelAnimationFrame;
+			
+			var keys = {
+				u: false,	// rotation
+				d: false,
+				l: false,
+				r: false,
+				clock: false,
+				anticlock: false,
+				wu: false,
+				wd: false,
+				wl: false,
+				wr: false,
+				wx: false,
+				wo: false,
+
+				pu: false,	// panning
+				pd: false,
+				pl: false,
+				pr: false,
+				pin: false,
+				pout: false,
+
+				din: false,	// perspective depth
+				dout: false
+			};
+			var canvasProp = {
+				width: -1,
+				height: -1,
+				perspective_depth: -2000
+			};
+			var cube = {
+				v : [
+					[200, 200, 200, 200],
+					[200, 200, 200, -200],
+					[200, 200, -200, 200],
+					[200, 200, -200, -200],
+					[200, -200, 200, 200],
+					[200, -200, 200, -200],
+					[200, -200, -200, 200],
+					[200, -200, -200, -200],
+					[-200, 200, 200, 200],
+					[-200, 200, 200, -200],
+					[-200, 200, -200, 200],
+					[-200, 200, -200, -200],
+					[-200, -200, 200, 200],
+					[-200, -200, 200, -200],
+					[-200, -200, -200, 200],
+					[-200, -200, -200, -200]
+				],
+				e : [
+					[0, 1],
+					[2, 3],
+					[4, 5],
+					[6, 7],
+					[8, 9],
+					[10, 11],
+					[12, 13],
+					[14, 15],
+
+					[0, 2],
+					[1, 3],
+					[4, 6],
+					[5, 7],
+					[8, 10],
+					[9, 11],
+					[12, 14],
+					[13, 15],
+
+					[0, 4],
+					[1, 5],
+					[2, 6],
+					[3, 7],
+					[8, 12],
+					[9, 13],
+					[10, 14],
+					[11, 15],
+
+					[0, 8],
+					[1, 9],
+					[2, 10],
+					[3, 11],
+					[4, 12],
+					[5, 13],
+					[6, 14],
+					[7, 15]
+				],
+				f: [	/**
+					[0, 1, 2],
+					[0, 3, 2],
+					[2, 3, 4],
+					[2, 5, 4]
+					//*/
+				]
+			}
+			var axes = [1000, 1000, 1000, 1000];
+			
+			window.onkeydown = function (evn) {
+				if (evn.which === 73) keys.u = true;	// i
+				if (evn.which === 75) keys.d = true;	// k
+				if (evn.which === 74) keys.l = true;	// j
+				if (evn.which === 76) keys.r = true;	// l
+				if (evn.which === 85) keys.anticlock = true;	// u
+				if (evn.which === 79) keys.clock = true;	// o
+				if (evn.which === 84) keys.wu = true;	// t
+				if (evn.which === 71) keys.wd = true;	// g
+				if (evn.which === 70) keys.wl = true;	// f
+				if (evn.which === 72) keys.wr = true;	// h
+				if (evn.which === 82) keys.wx = true;	// r
+				if (evn.which === 89) keys.wo = true;	// y
+
+				if (evn.which === 87) keys.pu = true;	// w
+				if (evn.which === 83) keys.pd = true;	// s
+				if (evn.which === 65) keys.pl = true;	// a
+				if (evn.which === 68) keys.pr = true;	// d
+				if (evn.which === 81) keys.pout = true;	// q
+				if (evn.which === 69) keys.pin = true;	// e
+
+				if (evn.which === 90) keys.dout = true;	// z
+				if (evn.which === 67) keys.din = true;	// c
+
+				if (!animFrame) animFrame = requestAnimationFrame (transform);
+				console.log(evn.which);
+			}
+			window.onkeyup = function (evn) {
+				if (evn.which === 73) keys.u = false;
+				if (evn.which === 75) keys.d = false;
+				if (evn.which === 74) keys.l = false;
+				if (evn.which === 76) keys.r = false;
+				if (evn.which === 85) keys.anticlock = false;
+				if (evn.which === 79) keys.clock = false;
+				if (evn.which === 84) keys.wu = false;
+				if (evn.which === 71) keys.wd = false;
+				if (evn.which === 70) keys.wl = false;
+				if (evn.which === 72) keys.wr = false;
+				if (evn.which === 82) keys.wx = false;
+				if (evn.which === 89) keys.wo = false;
+
+				if (evn.which === 87) keys.pu = false;
+				if (evn.which === 83) keys.pd = false;
+				if (evn.which === 65) keys.pl = false;
+				if (evn.which === 68) keys.pr = false;
+				if (evn.which === 81) keys.pout = false;
+				if (evn.which === 69) keys.pin = false;
+
+				if (evn.which === 90) keys.dout = false;
+				if (evn.which === 67) keys.din = false;
+
+				if (!animFrame) animFrame = requestAnimationFrame (transform);
+			}
+
+			function clearCanvas () {
+				c.clearRect (-canvasProp.width, -canvasProp.height, 2 * canvasProp.width + 2, 2 * canvasProp.height + 2);
+			}
+			function draw3dObj (obj) {
+				clearCanvas();
+
+				var projected = [];
+				for (var i = 0; i < obj.v.length; ++i) {	// To make perspective changes to vertices
+					projected[i] = obj.v[i].slice();
+					projected[i][0] *= axes[0] / 1000;
+					projected[i][1] *= axes[1] / 1000;
+					projected[i][2] *= axes[2] / 1000;
+					projected[i][3] *= axes[3] / 1000;
+
+					var perspective_zoom;
+					if (projected[i][3] <= canvasProp.perspective_depth) perspective_zoom = 1e7;
+					else perspective_zoom = (canvasProp.perspective_depth) / (canvasProp.perspective_depth - projected[i][3]);
+
+					projected[i][0] *= perspective_zoom;
+					projected[i][1] *= perspective_zoom;
+					projected[i][2] *= perspective_zoom;
+
+					if (projected[i][2] <= canvasProp.perspective_depth) perspective_zoom = 1e7;
+					else perspective_zoom = canvasProp.perspective_depth / (canvasProp.perspective_depth - projected[i][2]);
+
+					projected[i][0] *= perspective_zoom;
+					projected[i][1] *= perspective_zoom;
+
+				}
+				for (i = 0; i < obj.e.length; ++i) {	// Draw edges
+					var a = projected[obj.e[i][0]];
+					var b = projected[obj.e[i][1]];
+					c.beginPath();
+					c.moveTo (a[0], a[1]);
+					c.lineTo (b[0], b[1]);
+					var grd = c.createLinearGradient(a[0], a[1], b[0], b[1]);
+					grd.addColorStop(0, "hsl(200, 100%, " + (5+Math.exp((-a[2] + canvasProp.perspective_depth)/(-canvasProp.perspective_depth/2))*95) + "%)");
+					grd.addColorStop(1, "hsl(200, 100%, " + (5+Math.exp((-b[2] + canvasProp.perspective_depth)/(-canvasProp.perspective_depth/2))*95) + "%)");
+					c.strokeStyle = grd;
+					c.closePath();
+					c.stroke();
+				}
+
+				for (i = 0; i < obj.f.length; ++i) {	// Draw faces
+					c.beginPath();
+					var v1 = projected[obj.f[i][0]];
+					var v2 = projected[obj.f[i][1]];
+					var v3 = projected[obj.f[i][2]];
+					c.moveTo (v1[0], v1[1], v1[2]);
+					c.lineTo (v2[0], v2[1], v2[2]);
+					c.lineTo (v3[0], v3[1], v3[2]);
+					c.closePath();
+					c.fill();
+				}
+			}
+
+			function transform (t) {
+				var nextFrame = false;
+				if (timer === -1) timer = t;
+				var len = cube.v.length;
+				if (keys.r && !keys.l) {
+					for (var i = 0; i < len; ++i) {
+						var x = cube.v[i][0], z = cube.v[i][2];
+						cube.v[i][0] = x * m.cos + z * m.sin;
+						cube.v[i][2] = -x * m.sin + z * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.l && !keys.r) {
+					for (var i = 0; i < len; ++i) {
+						var x = cube.v[i][0], z = cube.v[i][2];
+						cube.v[i][0] = x * m.cos - z * m.sin;
+						cube.v[i][2] = x * m.sin + z * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.u && !keys.d) {
+					for (var i = 0; i < len; ++i) {
+						var y = cube.v[i][1], z = cube.v[i][2];
+						cube.v[i][1] = y * m.cos - z * m.sin;
+						cube.v[i][2] = y * m.sin + z * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.d && !keys.u) {
+					for (var i = 0; i < len; ++i) {
+						var y = cube.v[i][1], z = cube.v[i][2];
+						cube.v[i][1] = y * m.cos + z * m.sin;
+						cube.v[i][2] = -y * m.sin + z * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.clock && !keys.anticlock) {
+					for (var i = 0; i < len; ++i) {
+						var x = cube.v[i][0], y = cube.v[i][1];
+						cube.v[i][0] = x * m.cos - y * m.sin;
+						cube.v[i][1] = x * m.sin + y * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.anticlock && !keys.clock) {
+					for (var i = 0; i < len; ++i) {
+						var x = cube.v[i][0], y = cube.v[i][1];
+						cube.v[i][0] = x * m.cos + y * m.sin;
+						cube.v[i][1] = -x * m.sin + y * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.wr && !keys.wl) {
+					for (var i = 0; i < len; ++i) {
+						var x = cube.v[i][0], w = cube.v[i][3];
+						cube.v[i][0] = x * m.cos + w * m.sin;
+						cube.v[i][3] = -x * m.sin + w * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.wl && !keys.wr) {
+					for (var i = 0; i < len; ++i) {
+						var x = cube.v[i][0], w = cube.v[i][3];
+						cube.v[i][0] = x * m.cos - w * m.sin;
+						cube.v[i][3] = x * m.sin + w * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.wu && !keys.wd) {
+					for (var i = 0; i < len; ++i) {
+						var y = cube.v[i][1], w = cube.v[i][3];
+						cube.v[i][1] = y * m.cos - w * m.sin;
+						cube.v[i][3] = y * m.sin + w * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.wd && !keys.wu) {
+					for (var i = 0; i < len; ++i) {
+						var y = cube.v[i][1], w = cube.v[i][3];
+						cube.v[i][1] = y * m.cos + w * m.sin;
+						cube.v[i][3] = -y * m.sin + w * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.wx && !keys.wo) {
+					for (var i = 0; i < len; ++i) {
+						var z = cube.v[i][2], w = cube.v[i][3];
+						cube.v[i][2] = z * m.cos - w * m.sin;
+						cube.v[i][3] = z * m.sin + w * m.cos;
+					}
+					nextFrame = true;
+				}
+				if (keys.wo && !keys.wx) {
+					for (var i = 0; i < len; ++i) {
+						var z = cube.v[i][2], w = cube.v[i][3];
+						cube.v[i][2] = z * m.cos + w * m.sin;
+						cube.v[i][3] = -z * m.sin + w * m.cos;
+					}
+					nextFrame = true;
+				}
+
+
+				if (keys.pr && !keys.pl) {
+					for (var i = 0; i < len; ++i) {
+						cube.v[i][0] += m.pspeed;
+					}
+					nextFrame = true;
+				}
+				if (keys.pl && !keys.pr) {
+					for (var i = 0; i < len; ++i) {
+						cube.v[i][0] -= m.pspeed;
+					}
+					nextFrame = true;
+				}
+				if (keys.pu && !keys.pd) {
+					for (var i = 0; i < len; ++i) {
+						cube.v[i][1] -= m.pspeed;
+					}
+					nextFrame = true;
+				}
+				if (keys.pd && !keys.pu) {
+					for (var i = 0; i < len; ++i) {
+						cube.v[i][1] += m.pspeed;
+					}
+					nextFrame = true;
+				}
+				if (keys.pout && !keys.pin) {
+					for (var i = 0; i < len; ++i) {
+						cube.v[i][2] -= m.pspeed;
+					}
+					nextFrame = true;
+				}
+				if (keys.pin && !keys.pout) {
+					for (var i = 0; i < len; ++i) {
+						cube.v[i][2] += m.pspeed;
+					}
+					nextFrame = true;
+				}
+				if (keys.din && !keys.dout) {
+					canvasProp.perspective_depth += m.pspeed;
+					nextFrame = true;
+				}
+				if (keys.dout && !keys.din) {
+					canvasProp.perspective_depth -= m.pspeed;
+					nextFrame = true;
+				}
+
+				draw3dObj(cube);
+				if (nextFrame) animFrame = requestAnimationFrame (transform);
+				else {
+					timer = -1;
+					cancelAnimationFrame (animFrame);
+					animFrame = null;
+				}
+			}
+
+			window.onload = function () {
+				var canvas = document.getElementById("canv");
+				c = canvas.getContext("2d");
+				canvasProp.width = parseInt(canv.width);
+				canvasProp.height = parseInt(canv.height);
+
+				c.translate(canvasProp.width/2, canvasProp.height/2);
+				c.strokeStyle = "hsla";
+				c.fillStyle = "rgba(0, 0, 0, 50)";
+				c.lineWidth = 4;
+				c.lineJoin = "round";
+				draw3dObj(cube);
+			}
+		</script>
+	</body>
+</html>
